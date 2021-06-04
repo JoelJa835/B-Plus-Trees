@@ -17,7 +17,7 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
     }
 
     @SuppressWarnings("unchecked")
-    public BTreeNode<TKey> getChild(int index) {
+    public BTreeNode<TKey> getChild(int index) throws IOException {
 //		return (BTreeNode<TKey>)this.children[index];
         // CHANGE FOR STORING ON FILE
         return (BTreeNode<TKey>)StorageCache.getInstance().retrieveNode(this.children[index]);
@@ -60,7 +60,7 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
 
     /* The codes below are used to support insertion operation */
 
-    private void insertAt(int index, TKey key, BTreeNode<TKey> leftChild, BTreeNode<TKey> rightChild) {
+    private void insertAt(int index, TKey key, BTreeNode<TKey> leftChild, BTreeNode<TKey> rightChild) throws IOException {
         // move space for the new key
         for (int i = this.getKeyCount() + 1; i > index; --i) {
             this.setChild(i, this.getChild(i - 1));
@@ -81,7 +81,7 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
      * When splits a internal node, the middle key is kicked out and be pushed to parent node.
      */
     @Override
-    protected BTreeNode<TKey> split() {
+    protected BTreeNode<TKey> split() throws IOException {
         int midIndex = this.getKeyCount() / 2;
 
         BTreeInnerNode<TKey> newRNode = new BTreeInnerNode<TKey>();
@@ -102,7 +102,7 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
     }
 
     @Override
-    protected BTreeNode<TKey> pushUpKey(TKey key, BTreeNode<TKey> leftChild, BTreeNode<TKey> rightNode) {
+    protected BTreeNode<TKey> pushUpKey(TKey key, BTreeNode<TKey> leftChild, BTreeNode<TKey> rightNode) throws IOException {
         // find the target position of the new key
         int index = this.search(key);
 
@@ -123,7 +123,7 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
 
     /* The codes below are used to support delete operation */
 
-    private void deleteAt(int index) {
+    private void deleteAt(int index) throws IOException {
         int i = 0;
         for (i = index; i < this.getKeyCount() - 1; ++i) {
             this.setKey(i, this.getKey(i + 1));
@@ -137,7 +137,7 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
 
 
     @Override
-    protected void processChildrenTransfer(BTreeNode<TKey> borrower, BTreeNode<TKey> lender, int borrowIndex) {
+    protected void processChildrenTransfer(BTreeNode<TKey> borrower, BTreeNode<TKey> lender, int borrowIndex) throws IOException {
         int borrowerChildIndex = 0;
         while (borrowerChildIndex < this.getKeyCount() + 1 && this.getChild(borrowerChildIndex) != borrower)
             ++borrowerChildIndex;
@@ -155,7 +155,7 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
     }
 
     @Override
-    protected BTreeNode<TKey> processChildrenFusion(BTreeNode<TKey>  leftChild, BTreeNode<TKey> rightChild) {
+    protected BTreeNode<TKey> processChildrenFusion(BTreeNode<TKey>  leftChild, BTreeNode<TKey> rightChild) throws IOException {
         int index = 0;
         while (index < this.getKeyCount() && this.getChild(index) != leftChild)
             ++index;
@@ -188,7 +188,7 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
 
 
     @Override
-    protected void fusionWithSibling(TKey sinkKey, BTreeNode<TKey> rightSibling) {
+    protected void fusionWithSibling(TKey sinkKey, BTreeNode<TKey> rightSibling) throws IOException {
         BTreeInnerNode<TKey> rightSiblingNode = (BTreeInnerNode<TKey>)rightSibling;
         BTreeInnerNode<TKey> RightNode = (BTreeInnerNode<TKey>) StorageCache.getInstance().retrieveNode(rightSiblingNode.rightSibling);
 
@@ -210,7 +210,7 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
     }
 
     @Override
-    protected TKey transferFromSibling(TKey sinkKey, BTreeNode<TKey> sibling, int borrowIndex) {
+    protected TKey transferFromSibling(TKey sinkKey, BTreeNode<TKey> sibling, int borrowIndex) throws IOException {
         BTreeInnerNode<TKey> siblingNode = (BTreeInnerNode<TKey>)sibling;
 
         TKey upKey = null;

@@ -96,7 +96,7 @@ public class Data {
         DataInputStream dis =new DataInputStream(new ByteArrayInputStream(byteArray));
         Data result = new Data(1,2,3,4,5,6,7,8); // 1,2,3,45,6,7,8 will be your data extracted from the byte array
         result.setStorageByteOffset(storageByteOffset);
-        
+
         result.data1= dis.readInt();
         result.data2=dis.readInt();
         result.data3=dis.readInt();

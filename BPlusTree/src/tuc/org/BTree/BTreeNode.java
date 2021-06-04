@@ -1,5 +1,6 @@
 package tuc.org.BTree;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 enum TreeNodeType {
@@ -57,7 +58,7 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
         this.keys[index] = (Integer) key;
     }
 
-    public BTreeNode<TKey> getParent() {
+    public BTreeNode<TKey> getParent() throws IOException {
         //return this.parentNode;
         // CHANGE FOR STORING ON FILE
         return StorageCache.getInstance().retrieveNode(this.parentNode);
@@ -89,7 +90,7 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
         return this.getKeyCount() == this.keys.length;
     }
 
-    public BTreeNode<TKey> dealOverflow() {
+    public BTreeNode<TKey> dealOverflow() throws IOException {
 
         BTreeNode<TKey> rightSibling =  (BTreeNode<TKey>)StorageCache.getInstance().retrieveNode(this.rightSibling);
         int midIndex = this.getKeyCount() / 2;
@@ -113,9 +114,9 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
         return this.getParent().pushUpKey(upKey, this, newRNode);
     }
 
-    protected abstract BTreeNode<TKey> split();
+    protected abstract BTreeNode<TKey> split() throws IOException;
 
-    protected abstract BTreeNode<TKey> pushUpKey(TKey key, BTreeNode<TKey> leftChild, BTreeNode<TKey> rightNode);
+    protected abstract BTreeNode<TKey> pushUpKey(TKey key, BTreeNode<TKey> leftChild, BTreeNode<TKey> rightNode) throws IOException;
 
 
 
@@ -132,7 +133,7 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
         return this.getKeyCount() > (this.keys.length / 2);
     }
 
-    public BTreeNode<TKey> getLeftSibling() {
+    public BTreeNode<TKey> getLeftSibling() throws IOException {
         BTreeNode<TKey> leftSibling =  (BTreeNode<TKey>)StorageCache.getInstance().retrieveNode(this.leftSibling);
         if (leftSibling != null && leftSibling.getParent() == this.getParent())
             return leftSibling;
@@ -144,7 +145,7 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
         setDirty(); // we changed a sibling, so this node is dirty and must be flushed to disk
     }
 
-    public BTreeNode<TKey> getRightSibling() {
+    public BTreeNode<TKey> getRightSibling() throws IOException {
         BTreeNode<TKey> rightSibling =  (BTreeNode<TKey>)StorageCache.getInstance().retrieveNode(this.rightSibling);
         if (rightSibling != null && rightSibling.getParent() == this.getParent())
             return rightSibling;
@@ -159,7 +160,7 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
 
     }
 
-    public BTreeNode<TKey> dealUnderflow() {
+    public BTreeNode<TKey> dealUnderflow() throws IOException {
         if (this.getParent() == null)
             return null;
 
@@ -185,13 +186,13 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
         }
     }
 
-    protected abstract void processChildrenTransfer(BTreeNode<TKey> borrower, BTreeNode<TKey> lender, int borrowIndex);
+    protected abstract void processChildrenTransfer(BTreeNode<TKey> borrower, BTreeNode<TKey> lender, int borrowIndex) throws IOException;
 
-    protected abstract BTreeNode<TKey> processChildrenFusion(BTreeNode<TKey> leftChild, BTreeNode<TKey> rightChild);
+    protected abstract BTreeNode<TKey> processChildrenFusion(BTreeNode<TKey> leftChild, BTreeNode<TKey> rightChild) throws IOException;
 
-    protected abstract void fusionWithSibling(TKey sinkKey, BTreeNode<TKey> rightSibling);
+    protected abstract void fusionWithSibling(TKey sinkKey, BTreeNode<TKey> rightSibling) throws IOException;
 
-    protected abstract TKey transferFromSibling(TKey sinkKey, BTreeNode<TKey> sibling, int borrowIndex);
+    protected abstract TKey transferFromSibling(TKey sinkKey, BTreeNode<TKey> sibling, int borrowIndex) throws IOException;
 
     /* transforms this node to array of bytes, of length data page length */
     protected abstract byte[] toByteArray() throws IOException;

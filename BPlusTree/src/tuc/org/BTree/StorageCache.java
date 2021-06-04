@@ -1,11 +1,12 @@
 package tuc.org.BTree;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 
 public class StorageCache {
     private static final String NODE_STORAGE_FILENAME = "Index.bin";
     private static final String DATA_STORAGE_FILENAME = "Data.bin";
+    private static final int DataPageSize = 256;
 
     private static StorageCache instance;
 
@@ -52,23 +53,26 @@ public class StorageCache {
         return StorageCache.instance;
     }
 
-    public void flush() {
+    public void flush() throws IOException {
         flushNodes();
         flushData();
     }
 
     // checks each node in retrievedNodes whether it is dirty
     // If they are dirty, writes them to disk
-    private void flushNodes() {
+    private void flushNodes() throws IOException {
         BTreeNode node;
         for ( Object dataPageIndex : StorageCache.retrievedNodes.keySet() ) {
             node = (BTreeNode)StorageCache.retrievedNodes.get(dataPageIndex);
             if (node.isDirty()) {
                 byte[] byteArray = node.toByteArray();
-                // ......
-                // ......
-                // ......
+                File aFile = new File(NODE_STORAGE_FILENAME);								//Creating an object of type File.
+                RandomAccessFile myFile = new RandomAccessFile(aFile,"rw");
+
+                // seek to position DATA_PAGE_SIZE * dataPageIndex
+                //myFile.seek((long) DataPageSize *dataPageIndex);
                 // store byteArray to node/index file at byte position dataPageIndex * DATA_PAGE_SIZE
+                myFile.write(byteArray);
 
                 // ******************************
                 // we just wrote a data page to our file. This is a good location to increase our counter!!!!!
@@ -113,7 +117,7 @@ public class StorageCache {
     }
 
 
-    public BTreeNode retrieveNode(int dataPageIndex) {
+    public BTreeNode retrieveNode(int dataPageIndex) throws IOException {
         // if we have this dataPageIndex already in the cache, return it
         BTreeNode result = this.getNodeFromCache(dataPageIndex);
         if (result != null) {
@@ -132,24 +136,30 @@ public class StorageCache {
                 }
             }
         }
-
-
         // open our node/index file
+        File aFile = new File(NODE_STORAGE_FILENAME);								//Creating an object of type File.
+        RandomAccessFile myFile = new RandomAccessFile(aFile,"rw");
 
         // seek to position DATA_PAGE_SIZE * dataPageIndex
+        myFile.seek(DataPageSize*dataPageIndex);
 
-        // read DATA_PAGE_SIZE bytes (some constant)
-        // byte[] pageBytes = raf.read .....;
+        // read DATA_PAGE_SIZE bytes
+         byte[] pageBytes = new byte[DataPageSize];
+         myFile.read(pageBytes);
 
         // a 4 byte int should tell us what kind of node this is. See toByteArray(). Is it a BTreeInnerNode or a BTreeLeafNode?
-        // int type = read the 4 byte
+        DataInputStream dis =new DataInputStream(new ByteArrayInputStream(pageBytes));
+         int type = dis.readInt();
 
         // if type corresponds to inner node
-        //     result = new BTreeInnerNode();
-        //     result = result.fromByteArray(pageBytes, dataPageIndex);
-        // else this is a leaf node
-        //     result = new BTreeLeafNode();
-        //     result = result.fromByteArray(pageBytes, dataPageIndex);
+        if(type == 1) {
+            result = new BTreeInnerNode();
+            result = result.fromByteArray(pageBytes, dataPageIndex);
+        }
+        else {
+            result = new BTreeLeafNode();
+            result = result.fromByteArray(pageBytes, dataPageIndex);
+        }
 
 
         // ******************************
@@ -167,7 +177,7 @@ public class StorageCache {
 
 
 
-    public Data retrieveData(int dataByteOffset) {
+    public Data retrieveData(int dataByteOffset) throws IOException {
         // if we have this dataPageIndex already in the cache, return it
         Data result = this.getDataFromCache(dataByteOffset);
         if (result != null) {
@@ -189,15 +199,19 @@ public class StorageCache {
 
 
         // open our data file
+        File aFile = new File(DATA_STORAGE_FILENAME);								//Creating an object of type File.
+        RandomAccessFile myFile = new RandomAccessFile(aFile,"rw");
 
         // seek to position of the data page that corresponds to dataByteOffset
+        myFile.seek(dataByteOffset);
 
         // read DATA_PAGE_SIZE bytes (some constant)
-        // byte[] pageBytes = raf.read .....;
+        byte[] pageBytes = new byte[DataPageSize];
+        myFile.read(pageBytes);
 
         // get the part of the bytes that corresponds to dataByteOffset (--> pageBytesData), and transform to a Data instance
-        // result = new Data();
-        // result = result.fromByteArray(pageBytesData, dataByteOffset);
+        result = new Data();
+        //result = result.fromByteArray(pageBytesData, dataByteOffset);
 
 
         // ******************************

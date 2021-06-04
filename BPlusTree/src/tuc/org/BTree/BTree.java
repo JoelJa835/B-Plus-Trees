@@ -1,12 +1,15 @@
 package tuc.org.BTree;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 public class BTree<TKey extends Comparable<TKey>, TValue> {
     private BTreeNode<TKey> root;
 
 
     private int nextFreeDatafileByteOffset = 0; // for this assignment, we only create new, empty files. We keep here the next free byteoffset in our file
 
-    public BTree() {
+    public BTree() throws IOException {
         // this.root = new BTreeLeafNode<TKey, TValue>();
         // CHANGE FOR STORING ON FILE
         this.root = StorageCache.getInstance().newLeafNode();
@@ -16,7 +19,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> {
     /**
      * Insert a new key and its associated value into the B+ tree.
      */
-    public void insert(TKey key, TValue value) {
+    public void insert(TKey key, TValue value) throws IOException {
         // CHANGE FOR STORING ON FILE
         nextFreeDatafileByteOffset = StorageCache.getInstance().newData((Data)value, nextFreeDatafileByteOffset);
 
@@ -37,7 +40,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> {
     /**
      * Search a key value on the tree and return its associated value.
      */
-    public TValue search(TKey key) {
+    public TValue search(TKey key) throws FileNotFoundException {
         BTreeLeafNode<TKey, TValue> leaf = this.findLeafNodeShouldContainKey(key);
 
         int index = leaf.search(key);
@@ -47,7 +50,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> {
     /**
      * Delete a key and its associated value from the tree.
      */
-    public void delete(TKey key) {
+    public void delete(TKey key) throws IOException {
         BTreeLeafNode<TKey, TValue> leaf = this.findLeafNodeShouldContainKey(key);
 
         if (leaf.delete(key) && leaf.isUnderflow()) {
@@ -63,7 +66,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> {
      * Search the leaf node which should contain the specified key
      */
     @SuppressWarnings("unchecked")
-    private BTreeLeafNode<TKey, TValue> findLeafNodeShouldContainKey(TKey key) {
+    private BTreeLeafNode<TKey, TValue> findLeafNodeShouldContainKey(TKey key) throws FileNotFoundException {
         BTreeNode<TKey> node = this.root;
 
         while (node.getNodeType() == TreeNodeType.InnerNode) {

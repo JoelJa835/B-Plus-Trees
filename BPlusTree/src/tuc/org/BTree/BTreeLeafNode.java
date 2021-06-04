@@ -137,7 +137,7 @@ class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKe
      */
     @Override
     @SuppressWarnings("unchecked")
-    protected void fusionWithSibling(TKey sinkKey, BTreeNode<TKey> rightSibling) {
+    protected void fusionWithSibling(TKey sinkKey, BTreeNode<TKey> rightSibling) throws IOException {
         BTreeLeafNode<TKey, TValue> siblingLeaf = (BTreeLeafNode<TKey, TValue>)rightSibling;
         BTreeLeafNode<TKey,TValue> RightNode = (BTreeLeafNode<TKey,TValue>) StorageCache.getInstance().retrieveNode(siblingLeaf.rightSibling);
 

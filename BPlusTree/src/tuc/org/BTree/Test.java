@@ -1,7 +1,9 @@
 package tuc.org.BTree;
 
+import java.io.IOException;
+
 public class Test {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         // Demo with Data as data
         BTree<Integer, Data> tree = new BTree<Integer, Data>();
 
