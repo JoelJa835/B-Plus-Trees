@@ -8,7 +8,7 @@ enum TreeNodeType {
 }
 
 abstract class BTreeNode<TKey extends Comparable<TKey>> {
-    protected Object[] keys;
+    protected Integer[] keys;
     protected int keyCount;
 
     protected Integer parentNode;
@@ -54,7 +54,7 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
 
     public void setKey(int index, TKey key) {
         setDirty(); // we changed a key, so this node is dirty and must be flushed to disk
-        this.keys[index] = key;
+        this.keys[index] = (Integer) key;
     }
 
     public BTreeNode<TKey> getParent() {
@@ -197,5 +197,5 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
     protected abstract byte[] toByteArray() throws IOException;
 
     /* converts given array bytes of fixed length of our data page to a Node */
-    protected abstract BTreeNode<TKey> fromByteArray(byte[] byteArray, int dataPageOffset);
+    protected abstract BTreeNode<TKey> fromByteArray(byte[] byteArray, int dataPageOffset) throws IOException;
 }

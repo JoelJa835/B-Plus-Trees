@@ -1,18 +1,16 @@
 package tuc.org.BTree;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
-    protected final static int INNERORDER = 4;
+    protected final static int INNERORDER = 29;
     // protected Object[] children;
     // CHANGE FOR STORING ON FILE
     protected Integer[] children;
     private static final int DataPageSize = 256;
 
     public BTreeInnerNode() {
-        this.keys = new Object[INNERORDER + 1];
+        this.keys = new Integer[INNERORDER + 1];
         //this.children = new Object[INNERORDER + 2];
         // CHANGE FOR STORING ON FILE
         this.children = new Integer[INNERORDER + 2];
@@ -253,15 +251,36 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
         ByteArrayOutputStream baos = new ByteArrayOutputStream() ;
         DataOutputStream dos = new DataOutputStream(baos);
 
-
         dos.writeInt(1);
-        dos.writeInt(this.leftSibling);
-        dos.writeInt(this.rightSibling);
-        dos.writeInt(this.parentNode);
+        if(this.leftSibling == null)
+            dos.writeInt(-1);
+        else
+            dos.writeInt(this.leftSibling);
+
+        if(this.rightSibling == null)
+            dos.writeInt(-1);
+        else
+            dos.writeInt(this.rightSibling);
+
+        if(this.parentNode == null)
+            dos.writeInt(-1);
+        else
+            dos.writeInt(this.parentNode);
         dos.writeInt(this.keyCount);
 
-        dos.close();
+        for(int i=0; i<this.children.length;i++)
+            if(this.children[i]== null)
+                dos.writeInt(-1);
+            else
+                dos.writeInt(this.children[i]);
 
+        for(int i=0; i<this.keys.length;i++)
+            if(this.keys[i]== null)
+                dos.writeInt(-1);
+            else
+                dos.writeInt(this.keys[i]);
+
+        dos.close();
         byte[] byteArray = new byte[DataPageSize];
 
         byteArray = baos.toByteArray();
@@ -269,15 +288,39 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
         return byteArray;
 
     }
-    protected BTreeInnerNode<TKey> fromByteArray(byte[] byteArray, int dataPageOffset) {
+    protected BTreeInnerNode<TKey> fromByteArray(byte[] byteArray, int dataPageOffset) throws IOException {
         // this takes a byte array of fixed size, and transforms it to a BTreeInnerNode
         // it takes the format we store our node (as specified in BTreeInnerNode.toByteArray()) and constructs the BTreeInnerNode
         // We need as parameter the dataPageOffset in order to set it
+
+        DataInputStream dis =new DataInputStream(new ByteArrayInputStream(byteArray));
         BTreeInnerNode<TKey> result = new BTreeInnerNode<TKey>();
         result.setStorageDataPage(dataPageOffset);
 
-        // ..... do stuff
-        // ..... do stuff
+        dis.readInt();
+        result.leftSibling = dis.readInt();
+        if(result.leftSibling==-1)
+            result.leftSibling=null;
+        result.rightSibling = dis.readInt();
+        if(result.rightSibling==-1)
+            result.rightSibling=null;
+        result.parentNode = dis.readInt();
+        if(result.parentNode==-1)
+            result.parentNode=null;
+
+        result.keyCount = dis.readInt();
+
+        for(int i=0; i<this.children.length;i++) {
+            result.children[i] = dis.readInt();
+            if (result.children[i] == -1)
+                result.children[i] =null;
+        }
+        for(int i=0; i<this.keys.length;i++) {
+            result.keys[i] = dis.readInt();
+            if (result.keys[i] == -1)
+                result.keys[i] = null;
+        }
+
 
         return result;
     }

@@ -1,8 +1,6 @@
 package tuc.org.BTree;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKey> {
     protected final static int LEAFORDER = 4;
@@ -12,7 +10,7 @@ class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKe
     private static final int DataPageSize = 256;
 
     public BTreeLeafNode() {
-        this.keys = new Object[LEAFORDER + 1];
+        this.keys = new Integer[LEAFORDER + 1];
         this.values = new Integer[LEAFORDER + 1];
     }
 
@@ -175,12 +173,33 @@ class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKe
 
 
         dos.writeInt(2);
-        dos.writeInt(this.leftSibling);
-        dos.writeInt(this.rightSibling);
-        dos.writeInt(this.parentNode);
+        if(this.leftSibling == null)
+            dos.writeInt(-1);
+        else
+            dos.writeInt(this.leftSibling);
+
+        if(this.rightSibling == null)
+            dos.writeInt(-1);
+        else
+            dos.writeInt(this.rightSibling);
+
+        if(this.parentNode == null)
+            dos.writeInt(-1);
+        else
+            dos.writeInt(this.parentNode);
         dos.writeInt(this.keyCount);
 
-        dos.close();
+        for(int i=0; i<this.values.length;i++)
+            if(this.values[i]== null)
+                dos.writeInt(-1);
+            else
+                dos.writeInt(this.values[i]);
+
+        for(int i=0; i<this.keys.length;i++)
+            if(this.keys[i]== null)
+                dos.writeInt(-1);
+            else
+                dos.writeInt(this.keys[i]);
 
         byte[] byteArray = new byte[DataPageSize];
 
@@ -189,15 +208,38 @@ class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKe
         return byteArray;
 
     }
-    protected BTreeLeafNode<TKey, TValue> fromByteArray(byte[] byteArray, int dataPageOffset) {
+    protected BTreeLeafNode<TKey, TValue> fromByteArray(byte[] byteArray, int dataPageOffset) throws IOException {
         // this takes a byte array of fixed size, and transforms it to a BTreeLeafNode
         // it takes the format we store our node (as specified in toByteArray()) and constructs the BTreeLeafNode
         // We need as parameter the dataPageOffset in order to set it
+        DataInputStream dis =new DataInputStream(new ByteArrayInputStream(byteArray));
         BTreeLeafNode<TKey, TValue> result = new BTreeLeafNode<TKey, TValue>();
         result.setStorageDataPage(dataPageOffset);
 
-        // ..... do stuff
-        // ..... do stuff
+        dis.readInt();
+        result.leftSibling = dis.readInt();
+        if(result.leftSibling==-1)
+            result.leftSibling=null;
+        result.rightSibling = dis.readInt();
+        if(result.rightSibling==-1)
+            result.rightSibling=null;
+        result.parentNode = dis.readInt();
+        if(result.parentNode==-1)
+            result.parentNode=null;
+
+        result.keyCount = dis.readInt();
+
+        for(int i=0; i<this.values.length;i++) {
+            result.values[i] = dis.readInt();
+            if (result.values[i] == -1)
+                result.values[i] =null;
+        }
+        for(int i=0; i<this.keys.length;i++) {
+            result.keys[i] = dis.readInt();
+            if (result.keys[i] == -1)
+                result.keys[i] = null;
+        }
+
 
         return result;
     }

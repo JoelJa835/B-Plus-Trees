@@ -1,5 +1,6 @@
 package tuc.org.BTree;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 public class StorageCache {
@@ -81,7 +82,7 @@ public class StorageCache {
     }
 
 
-    private void flushData() {
+    private void flushData() throws IOException {
         Data data;
         int dataPageIndex;
 
