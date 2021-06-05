@@ -20,6 +20,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> {
      * Insert a new key and its associated value into the B+ tree.
      */
     public void insert(TKey key, TValue value) throws IOException {
+        this.root = StorageCache.getInstance().retrieveNode(this.root.getStorageDataPage());
         // CHANGE FOR STORING ON FILE
         nextFreeDatafileByteOffset = StorageCache.getInstance().newData((Data)value, nextFreeDatafileByteOffset);
 
@@ -40,7 +41,8 @@ public class BTree<TKey extends Comparable<TKey>, TValue> {
     /**
      * Search a key value on the tree and return its associated value.
      */
-    public TValue search(TKey key) throws FileNotFoundException {
+    public TValue search(TKey key) throws IOException {
+        this.root = StorageCache.getInstance().retrieveNode(this.root.getStorageDataPage());
         BTreeLeafNode<TKey, TValue> leaf = this.findLeafNodeShouldContainKey(key);
 
         int index = leaf.search(key);
@@ -66,7 +68,7 @@ public class BTree<TKey extends Comparable<TKey>, TValue> {
      * Search the leaf node which should contain the specified key
      */
     @SuppressWarnings("unchecked")
-    private BTreeLeafNode<TKey, TValue> findLeafNodeShouldContainKey(TKey key) throws FileNotFoundException {
+    private BTreeLeafNode<TKey, TValue> findLeafNodeShouldContainKey(TKey key) throws IOException {
         BTreeNode<TKey> node = this.root;
 
         while (node.getNodeType() == TreeNodeType.InnerNode) {

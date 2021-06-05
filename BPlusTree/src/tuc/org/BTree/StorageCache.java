@@ -7,11 +7,12 @@ public class StorageCache {
     private static final String NODE_STORAGE_FILENAME = "Index.bin";
     private static final String DATA_STORAGE_FILENAME = "Data.bin";
     private static final int DataPageSize = 256;
+    private static final int DataSize = 32;
 
     private static StorageCache instance;
 
     private static HashMap retrievedNodes = null;
-    private static HashMap retrievedDatas = null;
+    private static HashMap retrievedDatas =  null;
 
     // make this private so that noone can create instances of this class
     private StorageCache() {
@@ -66,21 +67,18 @@ public class StorageCache {
             node = (BTreeNode)StorageCache.retrievedNodes.get(dataPageIndex);
             if (node.isDirty()) {
                 byte[] byteArray = node.toByteArray();
-                File aFile = new File(NODE_STORAGE_FILENAME);								//Creating an object of type File.
-                RandomAccessFile myFile = new RandomAccessFile(aFile,"rw");
+                RandomAccessFile myFile = new RandomAccessFile(NODE_STORAGE_FILENAME,"rw");
 
                 // seek to position DATA_PAGE_SIZE * dataPageIndex
-                //myFile.seek((long) DataPageSize *dataPageIndex);
+                myFile.seek(node.getStorageDataPage()*DataPageSize);
                 // store byteArray to node/index file at byte position dataPageIndex * DATA_PAGE_SIZE
                 myFile.write(byteArray);
 
                 // ******************************
                 // we just wrote a data page to our file. This is a good location to increase our counter!!!!!
                 // ******************************
-
             }
         }
-
         // reset it
         StorageCache.retrievedNodes = null;
     }
@@ -88,8 +86,7 @@ public class StorageCache {
 
     private void flushData() throws IOException {
         Data data;
-        int dataPageIndex;
-
+        int dataPageIndex = 0;
         for ( Object storageByteOffset : StorageCache.retrievedDatas.keySet() ) {
             data = (Data)StorageCache.retrievedDatas.get(storageByteOffset);
             if (data.isDirty()) {
@@ -98,17 +95,21 @@ public class StorageCache {
                 // This process may result in writing each data page multiple times if it contains multiple dirty Datas
 
                 byte[] byteArray = data.toByteArray();
-                // read datapage given by calculated dataPageIndex from data file
+                byte[] Array = new byte[DataPageSize];
+                // read datapage given by calculated dataPageIndex from data file\
+                RandomAccessFile myFile = new RandomAccessFile(DATA_STORAGE_FILENAME,"rw");
+                dataPageIndex =data.getStorageByteOffset()/DataPageSize;
+                myFile.seek(dataPageIndex);
+                myFile.read(Array);
                 // copy byteArray to correct position of read bytes
+                System.arraycopy(byteArray,0,Array,data.getStorageByteOffset()%DataPageSize,DataSize);
                 // store it again to file
-                // ......
-                // ......
-                // ......
-
+                myFile.seek(dataPageIndex);
+                myFile.write(Array);
                 // ******************************
                 // we just wrote a data page to our file. This is a good location to increase our counter!!!!!
                 // ******************************
-
+                
             }
         }
 
@@ -123,7 +124,6 @@ public class StorageCache {
         if (result != null) {
             return result;
         }
-
         // OPTIONAL, not important for this assignment
         // during a range search, we will potentially retrieve a large set of nodes, despite we will use them only once
         // We can optionally add here a case where "large" number of cached, NOT DIRTY (!) nodes, are removed from memory
@@ -137,16 +137,12 @@ public class StorageCache {
             }
         }
         // open our node/index file
-        File aFile = new File(NODE_STORAGE_FILENAME);								//Creating an object of type File.
-        RandomAccessFile myFile = new RandomAccessFile(aFile,"rw");
-
+        RandomAccessFile myFile = new RandomAccessFile(NODE_STORAGE_FILENAME,"rw");
         // seek to position DATA_PAGE_SIZE * dataPageIndex
         myFile.seek(DataPageSize*dataPageIndex);
-
         // read DATA_PAGE_SIZE bytes
          byte[] pageBytes = new byte[DataPageSize];
          myFile.read(pageBytes);
-
         // a 4 byte int should tell us what kind of node this is. See toByteArray(). Is it a BTreeInnerNode or a BTreeLeafNode?
         DataInputStream dis =new DataInputStream(new ByteArrayInputStream(pageBytes));
          int type = dis.readInt();
@@ -161,16 +157,12 @@ public class StorageCache {
             result = result.fromByteArray(pageBytes, dataPageIndex);
         }
 
-
         // ******************************
         // we just read a data page from our file. This is a good location to increase our counter!!!!!
         // ******************************
 
-
         // before returning it, cache it for future reference
         this.cacheNode(dataPageIndex, result);
-
-
         return result;
 
     }
@@ -196,47 +188,40 @@ public class StorageCache {
                 }
             }
         }
-
-
         // open our data file
-        File aFile = new File(DATA_STORAGE_FILENAME);								//Creating an object of type File.
-        RandomAccessFile myFile = new RandomAccessFile(aFile,"rw");
-
+        RandomAccessFile myFile = new RandomAccessFile(DATA_STORAGE_FILENAME,"rw");
         // seek to position of the data page that corresponds to dataByteOffset
         myFile.seek(dataByteOffset);
-
         // read DATA_PAGE_SIZE bytes (some constant)
         byte[] pageBytes = new byte[DataPageSize];
+        byte [] pageBytesData = new byte[DataSize];
         myFile.read(pageBytes);
-
+        System.arraycopy(pageBytes,dataByteOffset%DataPageSize,pageBytesData,0,DataSize);
         // get the part of the bytes that corresponds to dataByteOffset (--> pageBytesData), and transform to a Data instance
         result = new Data();
-        //result = result.fromByteArray(pageBytesData, dataByteOffset);
+        result = result.fromByteArray(pageBytesData, dataByteOffset);
 
 
         // ******************************
         // we just read a data page from our file. This is a good location to increase our counter!!!!!
         // ******************************
 
-
         // before returning it, cache it for future reference
         this.cacheData(dataByteOffset, result);
-
-
         return result;
 
     }
 
-    public BTreeInnerNode newInnerNode() {
+    public BTreeInnerNode newInnerNode() throws IOException {
         BTreeInnerNode result = new BTreeInnerNode();
-        this.aquireNodeStorage(result);
+        this.acquireNodeStorage(result);
         result.setDirty();
         this.cacheNode(result.getStorageDataPage(), result);
         return result;
     }
-    public BTreeLeafNode newLeafNode() {
+    public BTreeLeafNode newLeafNode() throws IOException {
         BTreeLeafNode result = new BTreeLeafNode();
-        this.aquireNodeStorage(result);
+        this.acquireNodeStorage(result);
         result.setDirty();
         this.cacheNode(result.getStorageDataPage(), result);
         return result;
@@ -244,9 +229,15 @@ public class StorageCache {
 
     // opens our node/index file, calculates the dataPageIndex that corresponds to the end of the file (raf.length())
     // and sets it on given node
-    private void aquireNodeStorage(BTreeNode node) {
+    private void acquireNodeStorage(BTreeNode node) throws IOException {
         int dataPageIndex = 0;
         // open file, get length, and calculate the  dataPageIndex that corresponds to the next data page at the end of the file
+        RandomAccessFile myFile = new RandomAccessFile(NODE_STORAGE_FILENAME,"rw");
+        byte[] byteArray = new byte[DataPageSize];
+        long Filelength = myFile.length();
+        myFile.seek(Filelength);
+        myFile.write(byteArray);
+        dataPageIndex= (int) (myFile.length()/DataPageSize);
         // Actually write DATA_PAGE_LENGTH bytes to the end file, so for that subsequent new nodes the new length is used
         node.setStorageDataPage(dataPageIndex);
     }

@@ -3,15 +3,15 @@ package tuc.org.BTree;
 import java.io.*;
 
 class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKey> {
-    protected final static int LEAFORDER = 4;
+    protected final static int LEAFORDER = 29;
     // private Object[] values;
     // CHANGE FOR STORING ON FILE
     private Integer[] values; // integers pointing to byte offset in data file
     private static final int DataPageSize = 256;
 
     public BTreeLeafNode() {
-        this.keys = new Integer[LEAFORDER + 1];
-        this.values = new Integer[LEAFORDER + 1];
+        this.keys = new Integer[LEAFORDER ];
+        this.values = new Integer[LEAFORDER];
     }
 
     @SuppressWarnings("unchecked")
@@ -20,7 +20,7 @@ class BTreeLeafNode<TKey extends Comparable<TKey>, TValue> extends BTreeNode<TKe
     }
 
     public void setValue(int index, TValue value) {
-        this.values[index] = (Integer) value;
+        this.values[index] = ((Data) value).getStorageByteOffset();
         setDirty(); // we changed a value, so this node is dirty and must be flushed to disk
     }
 

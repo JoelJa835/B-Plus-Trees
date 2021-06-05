@@ -91,8 +91,6 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
     }
 
     public BTreeNode<TKey> dealOverflow() throws IOException {
-
-        BTreeNode<TKey> rightSibling =  (BTreeNode<TKey>)StorageCache.getInstance().retrieveNode(this.rightSibling);
         int midIndex = this.getKeyCount() / 2;
         TKey upKey = this.getKey(midIndex);
 
@@ -105,7 +103,7 @@ abstract class BTreeNode<TKey extends Comparable<TKey>> {
 
         // maintain links of sibling nodes
         newRNode.setLeftSibling(this);
-        newRNode.setRightSibling(rightSibling);
+        newRNode.setRightSibling((BTreeNode<TKey>)StorageCache.getInstance().retrieveNode(this.rightSibling));
         if (this.getRightSibling() != null)
             this.getRightSibling().setLeftSibling(newRNode);
         this.setRightSibling(newRNode);

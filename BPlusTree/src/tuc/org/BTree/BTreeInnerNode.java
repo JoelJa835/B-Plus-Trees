@@ -10,10 +10,10 @@ class BTreeInnerNode<TKey extends Comparable<TKey>> extends BTreeNode<TKey> {
     private static final int DataPageSize = 256;
 
     public BTreeInnerNode() {
-        this.keys = new Integer[INNERORDER + 1];
+        this.keys = new Integer[INNERORDER];
         //this.children = new Object[INNERORDER + 2];
         // CHANGE FOR STORING ON FILE
-        this.children = new Integer[INNERORDER + 2];
+        this.children = new Integer[INNERORDER +1];
     }
 
     @SuppressWarnings("unchecked")
